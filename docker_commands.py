@@ -4,7 +4,7 @@ import docker
 from dotenv import load_dotenv
 
 
-docker_container = os.environ.get('RUNNING_DOCKER', False)
+docker_container = False
 local_connection = os.environ.get('RUNNING_LOCAL', False)
 
 if not docker_container:
@@ -59,6 +59,20 @@ def get_containers():
         container_dict_id[container.id] = (container.name, container.status)
 
     return container_dict_name, container_dict_id, formatted_list, total_count
+
+
+def get_running_containers():
+    client = docker_client_connect()
+    containers = client.containers.list()
+    running_containers = [container.name for container in containers if container.status == 'running']
+    return running_containers
+
+
+def get_stopped_containers():
+    client = docker_client_connect()
+    containers = client.containers.list()
+    stopped_containers = [container.name for container in containers if container.status == 'exited']
+    return stopped_containers
 
 
 def restart_container(container_id_or_name):
