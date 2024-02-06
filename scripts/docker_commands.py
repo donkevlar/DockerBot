@@ -4,10 +4,10 @@ import logging
 
 from dotenv import load_dotenv
 
-docker_container = True
-
-if not docker_container:
+try:
     load_dotenv('.env')
+except Exception as e:
+    pass
 
 local_connection = os.environ.get('RUNNING_LOCAL', False)
 

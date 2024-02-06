@@ -9,8 +9,10 @@ import docker_commands as c
 import settings
 
 # Load env if not running Docker
-if not c.docker_container:
-    load_dotenv()
+try:
+    load_dotenv('.env')
+except Exception as e:
+    pass
 
 versionNumber = '0.0.5'
 logging.info(f'Starting DockerBot! Version: {versionNumber}')
