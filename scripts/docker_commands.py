@@ -4,10 +4,8 @@ import logging
 
 from dotenv import load_dotenv
 
-try:
-    load_dotenv('.env')
-except Exception as e:
-    pass
+load_dotenv()
+
 
 logging.info(f"{os.environ.get('PORT')}")
 logging.info(f"{os.environ.get('REMOTE_IP')}")

@@ -1,4 +1,6 @@
 import logging
+import os
+
 from dotenv import load_dotenv
 from interactions import Client, Intents, slash_command, SlashContext, listen, AutocompleteContext, \
     OptionType, slash_option
@@ -9,10 +11,7 @@ import docker_commands as c
 import settings
 
 # Load env if not running Docker
-try:
-    load_dotenv('.env')
-except Exception as e:
-    pass
+load_dotenv()
 
 versionNumber = '0.0.5'
 logging.info(f'Starting DockerBot! Version: {versionNumber}')
@@ -25,7 +24,7 @@ c.docker_client_connect()
 # Create a bot instance
 bot = Client(intents=Intents.DEFAULT, basic_logging=True)
 
-exclusion_list = []
+exclusion_list = [os.getenv('EXCLUSIONS')]
 
 
 @listen()  # this decorator tells snek that it needs to listen for the corresponding event, and run this coroutine
@@ -36,7 +35,8 @@ async def on_ready():
 
 
 @slash_command(name="restart-container", description="Restart a container using the container name")
-@slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", required=True)
+@slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", required=True,
+              autocomplete=True)
 async def simple_restart_container(ctx: SlashContext, container_name: str):
     print("Starting Command! simple-restart")
     options_running = c.get_running_containers()
@@ -49,13 +49,47 @@ async def simple_restart_container(ctx: SlashContext, container_name: str):
 
             print(f'Executed Restart Successfully: {cont}')
 
-            await ctx.send(f"Executed Restart Successfully: {cont}")
+            await ctx.send(f"Executed Restart Successfully: {cont}", ephemeral=True)
             logging.info('Successfully executed simple-restart-container')
 
 
 # Current best working autocomplete, can use this as template later
 @simple_restart_container.autocomplete("container_name")
-async def autocomplete_running_containers(ctx: AutocompleteContext):
+async def autocomplete_restart_containers(ctx: AutocompleteContext):
+    # Get user input from discord
+    string_option_input = ctx.input_text
+    # Get running containers
+    options_running = c.get_running_containers()
+    container_choices = []
+
+    for container in options_running:
+        if (string_option_input == container or string_option_input == container.lower()) and \
+                string_option_input not in exclusion_list:
+            container_choices += [{"name": f'{container}', "value": f'{container}'}]
+            print(f'Searched for: {string_option_input} | Found: {container} ')
+            logging.info(f'Searched for: {string_option_input} | Found: {container} ')
+
+    await ctx.send(choices=container_choices)
+
+
+@slash_command(name="stop-container", description="Stop a container with the container name")
+@slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", required=True,
+              autocomplete=True)
+async def simple_stop_container(ctx: SlashContext, container_name: str):
+    options_running = c.get_running_containers()
+
+    for cont in options_running:
+        if cont == container_name:
+            await ctx.defer(ephemeral=True)
+            c.stop_container(container_name)
+            print(cont)
+            await ctx.send(f"Stopping {cont}", ephemeral=True)
+            logging.info('Successfully executed simple-stop-container')
+
+
+# Current best working autocomplete, can use this as template later
+@simple_stop_container.autocomplete("container_name")
+async def autocomplete_stopped_containers(ctx: AutocompleteContext):
     # Get user input from discord
     string_option_input = ctx.input_text
     # Get running containers
@@ -77,15 +111,15 @@ async def autocomplete_running_containers(ctx: AutocompleteContext):
 @slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", autocomplete=True,
               required=True)
 async def simple_start_container(ctx: SlashContext, container_name: str):
-    options_running = c.get_running_containers()
+    options_stopped = c.get_stopped_containers()
 
-    selected = options_running
+    selected = options_stopped
 
     if selected is container_name:
         try:
             await ctx.defer(ephemeral=True)
             c.start_container(container_name)
-            await ctx.send(f"Starting {container_name}")
+            await ctx.send(f"Starting {container_name}", ephemeral=True)
             logging.info("Successfully executed simple-start-container")
         except Exception as e:
             logging.warning("Could not execute simple-start-container")
@@ -130,7 +164,7 @@ async def get_running_containers(ctx: SlashContext, container_name: str = None):
 
     paginator = Paginator.create_from_string(bot, formatted_info, page_size=200)
 
-    await paginator.send(ctx)
+    await paginator.send(ctx, ephemeral=True)
     logging.info('Successfully executed get-running-containers')
 
 
@@ -151,36 +185,6 @@ async def autocomplete_running_containers(ctx: AutocompleteContext):
 
     await ctx.send(choices=container_choices)
 
-
-# Define the bots command handler
-@slash_command(name="stop-container", description="Stop a container with the container name", group_name="simple")
-@slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", required=True)
-async def simple_stop_container(ctx: SlashContext, container_name: str):
-    options_exited = c.get_stopped_containers()
-
-    for cont in options_exited:
-        if cont == container_name:
-            await ctx.defer(ephemeral=True)
-            c.stop_container(container_name)
-            print(cont)
-            await ctx.send(f"Starting {cont}")
-            logging.info('Successfully executed simple-stop-container')
-
-
-@simple_stop_container.autocomplete("container_name")
-async def autocomplete_stopped_containers(ctx: AutocompleteContext):
-    # Get user input from discord
-    string_option_input = ctx.input_text
-    # Get running containers
-    options_running = c.get_running_containers()
-    container_choices = []
-
-    for container in options_running:
-        if string_option_input == container or string_option_input == container.lower() and \
-                string_option_input not in exclusion_list:
-            container_choices += [{"name": f'{container}', "value": f'{container}'}]
-
-    await ctx.send(choices=container_choices)
 
 if __name__ == "__main__":
     # Start the bot
