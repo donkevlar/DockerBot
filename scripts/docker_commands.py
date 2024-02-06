@@ -11,6 +11,10 @@ if not docker_container:
 
 local_connection = os.environ.get('RUNNING_LOCAL', False)
 
+logging.info(f"{os.environ.get('RUNNING_LOCAL')}")
+logging.info(f"{os.environ.get('PORT')}")
+logging.info(f"{os.environ.get('REMOTE_IP')}")
+
 
 def docker_client_connect(output: str = None):
     port = os.environ.get('PORT')
