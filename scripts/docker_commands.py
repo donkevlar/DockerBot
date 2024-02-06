@@ -9,9 +9,6 @@ try:
 except Exception as e:
     pass
 
-local_connection = os.environ.get('RUNNING_LOCAL', False)
-
-logging.info(f"{os.environ.get('RUNNING_LOCAL')}")
 logging.info(f"{os.environ.get('PORT')}")
 logging.info(f"{os.environ.get('REMOTE_IP')}")
 
@@ -21,37 +18,18 @@ def docker_client_connect(output: str = None):
     remote_ip = os.environ.get('REMOTE_IP')
     docker_host = f'tcp://{remote_ip}:{port}'
 
-    success_conn = False
+    try:
+        client = docker.DockerClient(base_url=docker_host)
+        if output is None:
+            pass
+        else:
+            print(f"successfully connected to host via URL {docker_host}")
+            logging.info(f"successfully connected to host via URL {docker_host}")
 
-    # Try to connect locally
-    if local_connection:
-        try:
-            client = docker.from_env()
-            success_conn = True
-            if output is None:
-                pass
-            else:
-                print("successfully connected to host via local connection")
-                logging.info("successfully connected to host via local connection")
-        except TimeoutError or ConnectionError as e:
-            print('Error: could not connect to docker host quitting!')
-            logging.warning('Error: could not connect to docker host quitting!')
-            exit()
-    else:
-
-        try:
-            client = docker.DockerClient(base_url=docker_host)
-            success_conn = True
-            if output is None:
-                pass
-            else:
-                print(f"successfully connected to host via URL {docker_host}")
-                logging.info(f"successfully connected to host via URL {docker_host}")
-
-        except TimeoutError or ConnectionError as e:
-            print('Error: could not connect to docker host quitting!')
-            logging.warning('Error: could not connect to docker host quitting!')
-            exit()
+    except TimeoutError or ConnectionError as e:
+        print('Error: could not connect to docker host quitting!')
+        logging.warning('Error: could not connect to docker host quitting!')
+        exit()
 
     return client
 
