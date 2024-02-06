@@ -8,8 +8,8 @@ FROM python:3.11-slim
 WORKDIR /DockerBot
 
 # Copy the current directory contents into the container at /app
-COPY Scripts/main.py /DockerBot
-COPY Scripts/commands.py /DockerBot
+COPY Scripts/bot.py /DockerBot
+COPY Scripts/docker_commands.py /DockerBot
 COPY Scripts/requirements.txt /DockerBot
 COPY Scripts/settings.py /DockerBot
 

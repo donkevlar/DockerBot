@@ -1,5 +1,4 @@
 import logging
-
 from dotenv import load_dotenv
 from interactions import Client, Intents, slash_command, SlashContext, listen, AutocompleteContext, \
     OptionType, slash_option
