@@ -4,7 +4,7 @@ import logging
 
 from dotenv import load_dotenv
 
-docker_container = False
+docker_container = True
 
 if not docker_container:
     load_dotenv('.env')
