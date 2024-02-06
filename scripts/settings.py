@@ -1,5 +1,5 @@
 import os
-from scripts.docker_commands import docker_container
+from docker_commands import docker_container
 from dotenv import load_dotenv
 
 if not docker_container:

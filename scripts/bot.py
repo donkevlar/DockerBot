@@ -23,6 +23,8 @@ c.docker_client_connect()
 # Create a bot instance
 bot = Client(intents=Intents.DEFAULT)
 
+exclusion_list = []
+
 
 @listen()  # this decorator tells snek that it needs to listen for the corresponding event, and run this coroutine
 async def on_ready():
