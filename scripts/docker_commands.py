@@ -12,7 +12,7 @@ if not docker_container:
 local_connection = os.environ.get('RUNNING_LOCAL', False)
 
 
-def docker_client_connect():
+def docker_client_connect(output: str = None):
     port = os.environ.get('PORT')
     remote_ip = os.environ.get('REMOTE_IP')
     docker_host = f'tcp://{remote_ip}:{port}'
@@ -24,8 +24,11 @@ def docker_client_connect():
         try:
             client = docker.from_env()
             success_conn = True
-            print("successfully connected to host via local connection")
-            logging.info("successfully connected to host via local connection")
+            if output is None:
+                pass
+            else:
+                print("successfully connected to host via local connection")
+                logging.info("successfully connected to host via local connection")
         except TimeoutError or ConnectionError as e:
             print('Error: could not connect to docker host quitting!')
             logging.warning('Error: could not connect to docker host quitting!')
@@ -35,15 +38,18 @@ def docker_client_connect():
         try:
             client = docker.DockerClient(base_url=docker_host)
             success_conn = True
-            print(f"successfully connected to host via URL {docker_host}")
-            logging.info(f"successfully connected to host via URL {docker_host}")
+            if output is None:
+                pass
+            else:
+                print(f"successfully connected to host via URL {docker_host}")
+                logging.info(f"successfully connected to host via URL {docker_host}")
 
         except TimeoutError or ConnectionError as e:
             print('Error: could not connect to docker host quitting!')
             logging.warning('Error: could not connect to docker host quitting!')
             exit()
 
-    return client, success_conn
+    return client
 
 
 def get_containers():
