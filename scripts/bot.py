@@ -1,3 +1,5 @@
+import logging
+
 from dotenv import load_dotenv
 from interactions import Client, Intents, slash_command, SlashContext, listen, AutocompleteContext, \
     OptionType, slash_option
@@ -11,7 +13,8 @@ import settings
 if not c.docker_container:
     load_dotenv()
 
-versionNumber = '0.0.1'
+versionNumber = '0.0.5'
+logging.info(f'Starting DockerBot! Version: {versionNumber}')
 
 # Test Docker Connection
 c.docker_client_connect()
@@ -43,14 +46,26 @@ async def simple_start_container(ctx: SlashContext, container_name: str):
             await ctx.defer(ephemeral=True)
             c.start_container(container_name)
             await ctx.send(f"Starting {container_name}")
+            logging.info("Successfully executed simple-start-container")
         except Exception as e:
+            logging.warning("Could not execute simple-start-container")
             print(e)
 
 
 @simple_start_container.autocomplete("container_name")
-async def autocomplete_running_containers(ctx: AutocompleteContext):
-    options_running = c.get_running_containers()
-    await ctx.send(choices=[{"name": f'{container}', "value": f"{container}"} for container in options_running])
+async def autocomplete_start_container(ctx: AutocompleteContext):
+    # Get user input from discord
+    string_option_input = ctx.input_text
+    # Get running containers
+    options_running = c.get_stopped_containers()
+    container_choices = []
+
+    for container in options_running:
+        if string_option_input == container or string_option_input == container.lower():
+            container_choices += [{"name": f'{container}', "value": f'{container}'}]
+
+    logging.info(f'Container found:{container_choices}')
+    await ctx.send(choices=container_choices)
 
 
 # Define the bots command handler
@@ -65,6 +80,7 @@ async def simple_start_container(ctx: SlashContext, container_name: str):
             c.stop_container(container_name)
             print(cont)
             await ctx.send(f"Starting {cont}")
+            logging.info('Successfully executed simple-stop-container')
 
 
 @slash_command(name="simple-restart-container", description="Restart a container using the container name")
@@ -75,7 +91,6 @@ async def simple_restart_container(ctx: SlashContext, container_name: str):
 
     for cont in options_running:
         if cont == container_name:
-
             await ctx.defer()
 
             c.restart_container(container_name)
@@ -83,6 +98,7 @@ async def simple_restart_container(ctx: SlashContext, container_name: str):
             print(f'Executed Restart Successfully: {cont}')
 
             await ctx.send(f"Executed Restart Successfully: {cont}")
+            logging.info('Successfully executed simple-restart-container')
 
 
 # Current best working autocomplete, can use this as template later
@@ -124,6 +140,7 @@ async def get_running_containers(ctx: SlashContext, container_name: str = None):
     paginator = Paginator.create_from_string(bot, formatted_info, page_size=200)
 
     await paginator.send(ctx)
+    logging.info('Successfully executed get-running-containers')
 
 
 @get_running_containers.autocomplete("container_name")
