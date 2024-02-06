@@ -23,7 +23,7 @@ c.docker_client_connect()
 # Define the entry point of the bot
 
 # Create a bot instance
-bot = Client(intents=Intents.DEFAULT)
+bot = Client(intents=Intents.DEFAULT, basic_logging=True)
 
 exclusion_list = []
 
