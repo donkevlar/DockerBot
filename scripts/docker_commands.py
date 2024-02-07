@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 logging.info(f"{os.environ.get('PORT')}")
 logging.info(f"{os.environ.get('REMOTE_IP')}")
 
@@ -35,23 +34,25 @@ def docker_client_connect(output: str = None):
 def get_containers():
     client = docker_client_connect()
     # List all containers
-    containers = client.containers.list()
-    all_containers = [container.name for container in containers]
-    return all_containers
+    containers = client.containers.list(all=True)
+
+    return containers
 
 
 def get_running_containers():
     client = docker_client_connect()
-    containers = client.containers.list()
+    containers = client.containers.list(all=True)
     running_containers = [container.name for container in containers if container.status == 'running']
-    return running_containers
+    sorted_running_containers = sorted(running_containers)
+    return sorted_running_containers
 
 
 def get_stopped_containers():
     client = docker_client_connect()
-    containers = client.containers.list()
+    containers = client.containers.list(all=True)
     stopped_containers = [container.name for container in containers if container.status == 'exited']
-    return stopped_containers
+    sorted_stopped_containers = sorted(stopped_containers)
+    return sorted_stopped_containers
 
 
 def restart_container(container_id_or_name):
@@ -64,7 +65,6 @@ def restart_container(container_id_or_name):
 
 
 def stop_container(container_id_or_name):
-
     # Connect to docker host
     client = docker_client_connect()
 
@@ -104,6 +104,16 @@ def start_container(container_id_or_name):
             print("Unsuccessful: Docker is either already running or the ID entered is not valid.")
 
 
-if __name__ == '__main__':
+def container_sort_key(container_option):
+    # Set 'running' status to have the highest priority
+    if container_option.status == 'running':
+        return 0
+    # Set 'unavailable' status to have the lowest priority
+    elif container_option.status == 'exited':
+        return 1
 
-    restart_container('Palworld')
+
+if __name__ == '__main__':
+    a = get_containers()
+    for c in a:
+        print(c.name, c.status)

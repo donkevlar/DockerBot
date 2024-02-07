@@ -113,17 +113,16 @@ async def autocomplete_stopped_containers(ctx: AutocompleteContext):
 async def simple_start_container(ctx: SlashContext, container_name: str):
     options_stopped = c.get_stopped_containers()
 
-    selected = options_stopped
-
-    if selected is container_name:
-        try:
-            await ctx.defer(ephemeral=True)
-            c.start_container(container_name)
-            await ctx.send(f"Starting {container_name}", ephemeral=True)
-            logging.info("Successfully executed simple-start-container")
-        except Exception as e:
-            logging.warning("Could not execute simple-start-container")
-            print(e)
+    for container in options_stopped:
+        if container == container_name:
+            try:
+                await ctx.defer(ephemeral=True)
+                c.start_container(container_name)
+                await ctx.send(f"Successfully started container: {container_name}", ephemeral=True)
+                logging.info("Successfully executed simple-start-container")
+            except Exception as e:
+                logging.warning("Could not execute simple-start-container")
+                print(e)
 
 
 @simple_start_container.autocomplete("container_name")
@@ -135,7 +134,7 @@ async def autocomplete_start_container(ctx: AutocompleteContext):
     container_choices = []
 
     for container in options_running:
-        if string_option_input == container or string_option_input == container.lower() and \
+        if string_option_input == container.lower() and \
                 string_option_input not in exclusion_list:
             container_choices += [{"name": f'{container}', "value": f'{container}'}]
 
@@ -143,32 +142,54 @@ async def autocomplete_start_container(ctx: AutocompleteContext):
     await ctx.send(choices=container_choices)
 
 
-@slash_command(name="get-running-containers", description="List all running containers")
+@slash_command(name="get-containers", description="List all running containers")
 @slash_option(name="container_name",
               description="Enter a name to see the status of a specific container",
               required=False, opt_type=OptionType.STRING, autocomplete=True)
-async def get_running_containers(ctx: SlashContext, container_name: str = None):
-    options_running = c.get_running_containers()
+@slash_option(name="filter",
+              description="Filter for container list. "
+                          "Do not use with container name search argument.",
+              required=False, opt_type=OptionType.STRING, autocomplete=True)
+async def get_containers(ctx: SlashContext, container_name: str = None, filter: str = "All"):
     formatted_info = ''
     count = 0
-    # discord to wait for callback
     await ctx.defer(ephemeral=True)
 
-    for container in options_running:
-        count += 1
-        if container_name is not None and container_name == container:
-            formatted_info = f'{container_name} is Running'
-            break
+    try:
+        # Check filter options
+        if filter == "running":
+            options_ = c.get_running_containers()
+            print(f"Filter Set: {filter}")
+        elif filter == "exited":
+            options_ = c.get_stopped_containers()
+            print(f"Filter Set: {filter}")
         else:
-            formatted_info += f'{count}: {container}\n'
+            options_ = c.get_containers()
+            print(f"Filter Set: {filter}")
 
-    paginator = Paginator.create_from_string(bot, formatted_info, page_size=200)
+        # execute when a container name is present
+        if container_name is not None:
+            for container in options_:
+                if container_name == container.name.lower():
+                    formatted_info = f'{container.name} | status: {container.status}\n'
+                    break
+        elif container_name is None:
 
-    await paginator.send(ctx, ephemeral=True)
-    logging.info('Successfully executed get-running-containers')
+            for container in options_:
+                count += 1
+                formatted_info += f'{count}: {container.name} | status: {container.status}\n'
+
+        paginator = Paginator.create_from_string(bot, formatted_info, page_size=450)
+
+        await paginator.send(ctx, ephemeral=True)
+        logging.info('Successfully executed get-running-containers')
+
+    except Exception as e:
+        await ctx.send("Could not complete your request at this time due to an error!", ephemeral=True)
+        print("Error occured: ", e)
 
 
-@get_running_containers.autocomplete("container_name")
+@get_containers.autocomplete("container_name")
 async def autocomplete_running_containers(ctx: AutocompleteContext):
     # Get user input from discord
     string_option_input = ctx.input_text
@@ -184,6 +205,19 @@ async def autocomplete_running_containers(ctx: AutocompleteContext):
             logging.info(f'Searched for: {string_option_input} | Found: {container} ')
 
     await ctx.send(choices=container_choices)
+
+
+@get_containers.autocomplete("filter")
+async def autocomplete_filter_get_containers(ctx: AutocompleteContext):
+    # Get user input from discord
+    string_option_input = ctx.input_text
+    choices = [
+        {"name": "Running", "value": "running"},
+        {"name": "Exited", "value": "exited"},
+        {"name": "All", "value": "all"}
+    ]
+
+    await ctx.send(choices=choices)
 
 
 if __name__ == "__main__":
