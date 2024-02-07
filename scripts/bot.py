@@ -166,20 +166,31 @@ async def get_containers(ctx: SlashContext, container_name: str = None, filter: 
         else:
             options_ = c.get_containers()
             print(f"Filter Set: {filter}")
+            if container_name is not None:
+                for container in options_:
+                    if container_name == container.name.lower():
+                        formatted_info = f'{container.name} | status: {container.status}\n'
+                        break
 
         # execute when a container name is present
-        if container_name is not None:
+        if container_name is not None and filter != "all":
             for container in options_:
-                if container_name == container.name.lower():
-                    formatted_info = f'{container.name} | status: {container.status}\n'
+                if container_name == container.lower():
+                    formatted_info = f'{container}\n'
                     break
-        elif container_name is None:
+        elif container_name is None and filter == "all":
 
             for container in options_:
                 count += 1
                 formatted_info += f'{count}: {container.name} | status: {container.status}\n'
 
-        paginator = Paginator.create_from_string(bot, formatted_info, page_size=450)
+        elif container_name is None and filter != "all":
+
+            for container in options_:
+                count += 1
+                formatted_info += f'{count}: {container}\n'
+
+        paginator = Paginator.create_from_string(bot, formatted_info, page_size=350)
 
         await paginator.send(ctx, ephemeral=True)
         logging.info('Successfully executed get-running-containers')
@@ -218,6 +229,46 @@ async def autocomplete_filter_get_containers(ctx: AutocompleteContext):
     ]
 
     await ctx.send(choices=choices)
+
+
+@slash_command(name="get-logs", description="Get container logs")
+@slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", autocomplete=True,
+              required=True)
+async def simple_get_container_logs(ctx: SlashContext, container_name: str):
+    options_ = c.get_running_containers()
+
+    for container in options_:
+        if container == container_name:
+            try:
+                await ctx.defer(ephemeral=True)
+                logs = c.get_container_logs(container_name)
+
+                paginator = Paginator.create_from_string(bot, logs, page_size=2000)
+
+                await paginator.send(ctx, ephemeral=True)
+                logging.info("Successfully executed get-logs")
+            except Exception as e:
+                logging.warning("Could not execute get-logs")
+                await ctx.send("Could not complete your request at this time due to an error!", ephemeral=True)
+                print(e)
+
+
+@simple_get_container_logs.autocomplete("container_name")
+async def autocomplete_running_containers(ctx: AutocompleteContext):
+    # Get user input from discord
+    string_option_input = ctx.input_text
+    # Get running containers
+    options_running = c.get_running_containers()
+    container_choices = []
+
+    for container in options_running:
+        if string_option_input == container or string_option_input == container.lower() and \
+                string_option_input not in exclusion_list:
+            container_choices += [{"name": f'{container}', "value": f'{container}'}]
+            print(f'Searched for: {string_option_input} | Found: {container} ')
+            logging.info(f'Searched for: {string_option_input} | Found: {container} ')
+
+    await ctx.send(choices=container_choices)
 
 
 if __name__ == "__main__":

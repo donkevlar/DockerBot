@@ -47,6 +47,14 @@ def get_running_containers():
     return sorted_running_containers
 
 
+def get_container_logs(container_id_or_name):
+    client = docker_client_connect()
+    container = client.containers.get(container_id_or_name)
+    container_logs = container.logs()
+    decoded_logs = container_logs.decode('utf-8')
+    return decoded_logs
+
+
 def get_stopped_containers():
     client = docker_client_connect()
     containers = client.containers.list(all=True)
@@ -114,6 +122,5 @@ def container_sort_key(container_option):
 
 
 if __name__ == '__main__':
-    a = get_containers()
-    for c in a:
-        print(c.name, c.status)
+    a = get_container_logs("Palworld")
+    print(a)
