@@ -1,9 +1,8 @@
 import logging
 import os
-
 from dotenv import load_dotenv
 from interactions import Client, Intents, slash_command, SlashContext, listen, AutocompleteContext, \
-    OptionType, slash_option
+    OptionType, slash_option, Permissions, slash_default_member_permission
 from interactions.ext.paginators import Paginator
 
 # Other Files
@@ -35,6 +34,7 @@ async def on_ready():
 
 
 @slash_command(name="restart-container", description="Restart a container using the container name")
+@slash_default_member_permission(Permissions.USE_SLASH_COMMANDS)
 @slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", required=True,
               autocomplete=True)
 async def simple_restart_container(ctx: SlashContext, container_name: str):
@@ -73,6 +73,7 @@ async def autocomplete_restart_containers(ctx: AutocompleteContext):
 
 
 @slash_command(name="stop-container", description="Stop a container with the container name")
+@slash_default_member_permission(Permissions.USE_SLASH_COMMANDS)
 @slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", required=True,
               autocomplete=True)
 async def simple_stop_container(ctx: SlashContext, container_name: str):
@@ -108,6 +109,7 @@ async def autocomplete_stopped_containers(ctx: AutocompleteContext):
 
 # Define the bots command handler
 @slash_command(name="start-container", description="Start a container with the container name")
+@slash_default_member_permission(Permissions.USE_SLASH_COMMANDS)
 @slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", autocomplete=True,
               required=True)
 async def simple_start_container(ctx: SlashContext, container_name: str):
@@ -143,6 +145,7 @@ async def autocomplete_start_container(ctx: AutocompleteContext):
 
 
 @slash_command(name="get-containers", description="List all running containers")
+@slash_default_member_permission(Permissions.USE_SLASH_COMMANDS)
 @slash_option(name="container_name",
               description="Enter a name to see the status of a specific container",
               required=False, opt_type=OptionType.STRING, autocomplete=True)
@@ -150,7 +153,7 @@ async def autocomplete_start_container(ctx: AutocompleteContext):
               description="Filter for container list. "
                           "Do not use with container name search argument.",
               required=False, opt_type=OptionType.STRING, autocomplete=True)
-async def get_containers(ctx: SlashContext, container_name: str = None, filter: str = "All"):
+async def get_containers(ctx: SlashContext, container_name: str = None, filter: str = "all"):
     formatted_info = ''
     count = 0
     await ctx.defer(ephemeral=True)
@@ -166,11 +169,6 @@ async def get_containers(ctx: SlashContext, container_name: str = None, filter: 
         else:
             options_ = c.get_containers()
             print(f"Filter Set: {filter}")
-            if container_name is not None:
-                for container in options_:
-                    if container_name == container.name.lower():
-                        formatted_info = f'{container.name} | status: {container.status}\n'
-                        break
 
         # execute when a container name is present
         if container_name is not None and filter != "all":
@@ -189,6 +187,13 @@ async def get_containers(ctx: SlashContext, container_name: str = None, filter: 
             for container in options_:
                 count += 1
                 formatted_info += f'{count}: {container}\n'
+
+        elif container_name is not None and filter == "all":
+
+            for container in options_:
+                count += 1
+                if container.lower() == container_name:
+                    formatted_info += f'{count}: {container.name} | status: {container.status}\n'
 
         paginator = Paginator.create_from_string(bot, formatted_info, page_size=350)
 
@@ -215,7 +220,8 @@ async def autocomplete_running_containers(ctx: AutocompleteContext):
             print(f'Searched for: {string_option_input} | Found: {container} ')
             logging.info(f'Searched for: {string_option_input} | Found: {container} ')
 
-    await ctx.send(choices=container_choices)
+    if string_option_input is not None or string_option_input != "":
+        await ctx.send(choices=container_choices)
 
 
 @get_containers.autocomplete("filter")
@@ -232,6 +238,7 @@ async def autocomplete_filter_get_containers(ctx: AutocompleteContext):
 
 
 @slash_command(name="get-logs", description="Get container logs")
+@slash_default_member_permission(Permissions.USE_SLASH_COMMANDS)
 @slash_option(name="container_name", opt_type=OptionType.STRING, description="Enter Container Name", autocomplete=True,
               required=True)
 async def simple_get_container_logs(ctx: SlashContext, container_name: str):
@@ -268,7 +275,8 @@ async def autocomplete_running_containers(ctx: AutocompleteContext):
             print(f'Searched for: {string_option_input} | Found: {container} ')
             logging.info(f'Searched for: {string_option_input} | Found: {container} ')
 
-    await ctx.send(choices=container_choices)
+    if container_choices != '' or container_choices is not None:
+        await ctx.send(choices=container_choices)
 
 
 if __name__ == "__main__":
