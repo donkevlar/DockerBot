@@ -112,15 +112,6 @@ def start_container(container_id_or_name):
             print("Unsuccessful: Docker is either already running or the ID entered is not valid.")
 
 
-def container_sort_key(container_option):
-    # Set 'running' status to have the highest priority
-    if container_option.status == 'running':
-        return 0
-    # Set 'unavailable' status to have the lowest priority
-    elif container_option.status == 'exited':
-        return 1
-
-
 if __name__ == '__main__':
     a = get_container_logs("Palworld")
     print(a)
