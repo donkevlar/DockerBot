@@ -177,7 +177,9 @@ async def autocomplete_start_container(ctx: AutocompleteContext):
 @slash_command(name="get-containers", description="List all running containers")
 @check(ownership_check)
 @slash_default_member_permission(Permissions.USE_SLASH_COMMANDS)
-@option_container_name()
+@slash_option(name="container_name",
+              description="Enter a container name.",
+              required=False, opt_type=OptionType.STRING, autocomplete=True)
 @slash_option(name="filter",
               description="Filter for container list. "
                           "Do not use with container name search argument.",
