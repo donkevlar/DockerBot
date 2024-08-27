@@ -6,8 +6,8 @@ FROM python:3.12-slim
 WORKDIR /DockerBot
 
 # Copy the current directory contents into the container at /app
-COPY scripts/bot.py /DockerBot
-COPY scripts/docker_commands.py /DockerBot
+COPY scripts/main.py /DockerBot
+COPY scripts/docker_lib.py /DockerBot
 COPY scripts/requirements.txt /DockerBot
 COPY scripts/settings.py /DockerBot
 
@@ -23,4 +23,4 @@ RUN set -ex \
 
 
 
-CMD ["python", "bot.py"]
+CMD ["python", "main.py"]
