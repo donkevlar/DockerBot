@@ -1,8 +1,6 @@
 import logging
-import os
 from dotenv import load_dotenv
 from interactions import *
-from interactions.ext.paginators import Paginator
 
 # Other Files
 import docker_lib as c
