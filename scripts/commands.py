@@ -66,24 +66,6 @@ class DockerCommands(Extension):
                 await ctx.send(f"Executed Restart Successfully: {cont}", ephemeral=True)
                 logging.info('Successfully executed simple-restart-container')
 
-    # Current best working autocomplete, can use this as template later
-    @simple_restart_container.autocomplete("container_name")
-    async def autocomplete_restart_containers(self, ctx: AutocompleteContext):
-        # Get user input from discord
-        string_option_input = ctx.input_text
-        # Get running containers
-        options_running = c.get_running_containers()
-        container_choices = []
-
-        for container in options_running:
-            if (string_option_input == container or string_option_input == container.lower()) and \
-                    string_option_input not in exclusion_list:
-                container_choices += [{"name": f'{container}', "value": f'{container}'}]
-                print(f'Searched for: {string_option_input} | Found: {container} ')
-                logging.info(f'Searched for: {string_option_input} | Found: {container} ')
-
-        await ctx.send(choices=container_choices)
-
     @slash_command(name="stop-container", description="Stop a container with the container name")
     @check(ownership_check)
     @slash_default_member_permission(Permissions.USE_SLASH_COMMANDS)
@@ -98,24 +80,6 @@ class DockerCommands(Extension):
                 print(cont)
                 await ctx.send(f"Stopping {cont}", ephemeral=True)
                 logging.info('Successfully executed simple-stop-container')
-
-    # Current best working autocomplete, can use this as template later
-    @simple_stop_container.autocomplete("container_name")
-    async def autocomplete_stopped_containers(self, ctx: AutocompleteContext):
-        # Get user input from discord
-        string_option_input = ctx.input_text
-        # Get running containers
-        options_running = c.get_running_containers()
-        container_choices = []
-
-        for container in options_running:
-            if (string_option_input == container or string_option_input == container.lower()) and \
-                    string_option_input not in exclusion_list:
-                container_choices += [{"name": f'{container}', "value": f'{container}'}]
-                print(f'Searched for: {string_option_input} | Found: {container} ')
-                logging.info(f'Searched for: {string_option_input} | Found: {container} ')
-
-        await ctx.send(choices=container_choices)
 
     # Define the bots command handler
     @slash_command(name="start-container", description="Start a container with the container name")
@@ -135,22 +99,6 @@ class DockerCommands(Extension):
                 except Exception as e:
                     logging.warning("Could not execute simple-start-container")
                     print(e)
-
-    @simple_start_container.autocomplete("container_name")
-    async def autocomplete_start_container(self, ctx: AutocompleteContext):
-        # Get user input from discord
-        string_option_input = ctx.input_text
-        # Get running containers
-        options_running = c.get_stopped_containers()
-        container_choices = []
-
-        for container in options_running:
-            if string_option_input == container.lower() and \
-                    string_option_input not in exclusion_list:
-                container_choices += [{"name": f'{container}', "value": f'{container}'}]
-
-        logging.info(f'Container found:{container_choices}')
-        await ctx.send(choices=container_choices)
 
     @slash_command(name="get-containers", description="List all running containers")
     @check(ownership_check)
@@ -243,12 +191,66 @@ class DockerCommands(Extension):
 
     # Auto Complete ---------------------------------------------
     #
+    @simple_start_container.autocomplete("container_name")
+    async def autocomplete_start_container(self, ctx: AutocompleteContext):
+        # Get user input from discord
+        string_option_input = ctx.input_text
+        # Get running containers
+        options_running = c.get_stopped_containers()
+        options_running.sort()
+        print("Sorted: ", options_running)
+        container_choices = []
+        if ctx.input_text == "":
+            count = 0
+            for option in options_running:
+                count += 1
+                if count <= 25:
+                    container_choices.append({"name": option, "value": option})
+
+        else:
+            for container in options_running:
+                if string_option_input == container.lower() and \
+                        string_option_input not in exclusion_list:
+                    container_choices.append({"name": f'{container}', "value": f'{container}'})
+
+            logging.info(f'Container found:{container_choices}')
+
+        await ctx.send(choices=container_choices)
+
+    @simple_stop_container.autocomplete("container_name")
+    @simple_restart_container.autocomplete("container_name")
+    async def autocomplete_stopped_containers(self, ctx: AutocompleteContext):
+        # Get user input from discord
+        string_option_input = ctx.input_text
+        # Get running containers
+        options_running = c.get_running_containers()
+        options_running.sort()
+        container_choices = []
+
+        if ctx.input_text == "":
+            count = 0
+            for option in options_running:
+                count += 1
+                if count <= 25:
+                    container_choices.append({"name": option, "value": option})
+
+        else:
+            for container in options_running:
+                if (string_option_input == container or string_option_input == container.lower()) and \
+                        string_option_input not in exclusion_list:
+                    container_choices += [{"name": f'{container}', "value": f'{container}'}]
+                    print(f'Searched for: {string_option_input} | Found: {container} ')
+                    logging.info(f'Searched for: {string_option_input} | Found: {container} ')
+
+        await ctx.send(choices=container_choices)
+
     @get_containers.autocomplete("container_name")
     async def autocomplete_running_containers(self, ctx: AutocompleteContext):
         # Get user input from discord
         string_option_input = ctx.input_text
         # Get running containers
         options_running = c.get_running_containers()
+        options_running.sort()
         container_choices = []
 
         for container in options_running:
