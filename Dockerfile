@@ -6,10 +6,7 @@ FROM python:3.12-slim
 WORKDIR /DockerBot
 
 # Copy the current directory contents into the container at /app
-COPY scripts/main.py /DockerBot
-COPY scripts/docker_lib.py /DockerBot
-COPY scripts/requirements.txt /DockerBot
-COPY scripts/settings.py /DockerBot
+COPY scripts/ /DockerBot
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --trusted-host pypi.python.org -r requirements.txt

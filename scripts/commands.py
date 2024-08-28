@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from interactions import *
 from interactions.ext.paginators import Paginator
 
+# TODO Add better logging similar to bookshelf-traveller
+
 # Other Files
 import docker_lib as c
 
