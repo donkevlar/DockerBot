@@ -15,7 +15,7 @@ logger = logging.getLogger("bot")
 handler = logging.StreamHandler()
 console_handler = logger.handlers[0]
 original_formatter = console_handler.formatter
-
+SETUP_COMPLETE = False
 # Load env if not running Docker
 load_dotenv()
 
@@ -50,6 +50,13 @@ async def ownership_check(ctx: BaseContext, application=''):
 
         else:
             return False
+
+
+async def setup_check():
+    if not SETUP_COMPLETE:
+        return False
+    else:
+        return True
 
 
 def option_container_name():
@@ -284,12 +291,14 @@ class DockerCommands(Extension):
     async def list_applications(self, ctx: SlashContext, user=0):
         await ctx.defer(ephemeral=True)
         try:
+
             if user:
                 result = db.get_user_applications(user)
                 containers = []
-                if result:
-                    discord_ = await self.bot.fetch_user(user)
-                    discord_user = discord_.username
+                discord_ = await self.bot.fetch_user(user)
+                discord_user = discord_.username
+                if user in result:
+
                     num_ = len(result)
                     await ctx.send(f'User **{discord_user}** is registered to **{num_}** applications')
                     for apps in result:
@@ -299,6 +308,9 @@ class DockerCommands(Extension):
                         containers.append(app_name)
 
                         await ctx.send(f"{app_name}")
+                else:
+                    await ctx.send("No applications registered to this user.")
+
 
             else:
                 result = db.get_all_users()
