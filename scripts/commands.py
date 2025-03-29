@@ -296,7 +296,7 @@ class DockerCommands(Extension):
             r = db.get_user_applications(user_id)
             cont_ = []
             d_ = await self.bot.fetch_user(user_id)
-            d_user = d_.username
+            d_user = d_.display_name
             if r:
                 n_ = len(r)
                 msg_ = Embed(title=F"{d_user} Registered Applications",
@@ -337,7 +337,7 @@ class DockerCommands(Extension):
                             user = apps.get('user_id')
 
                             discord_ = await self.bot.fetch_user(user)
-                            discord_user = discord_.username
+                            discord_user = discord_.display_name
 
                             await ctx.send(f"{discord_user} | {app_name}", ephemeral=True)
 
@@ -568,7 +568,6 @@ class DockerCommands(Extension):
                     container_choices.append(app)
             if len(container_choices) == 0:
                 container_choices = start_options()
-
 
         else:
             for container in options_:
