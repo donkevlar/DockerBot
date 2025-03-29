@@ -325,7 +325,8 @@ class DockerCommands(Extension):
                     else:
                         await ctx.send("No applications registered to this user.")
                 else:
-                    await ctx.send("Permission Denied! You do not have permission to run this command with this argument.")
+                    await ctx.send(
+                        "Permission Denied! You do not have permission to run this command with this argument.")
 
             else:
                 if verify:
@@ -507,19 +508,35 @@ class DockerCommands(Extension):
         # Get user input from discord
         string_option_input = ctx.input_text
         string_option_input_lower = string_option_input.lower()
+        # Check admin
+        verify = await ownership_check(ctx)
         # Get running containers
         options_ = c.get_all_containers()
         container_choices = []
+        options_r = c.get_running_containers()
+        options_r.sort()
+
+        def start_options():
+            choices = []
+            count = 0
+            for option in options_r:
+                count += 1
+                if count <= 25:
+                    choices.append({"name": option, "value": option})
+            return choices
+
         if ctx.input_text == "":
-            pass
+            if verify:
+                container_choices = start_options()
 
         else:
-            for container in options_:
-                if string_option_input_lower in container.lower() and \
-                        string_option_input_lower not in exclusion_list:
-                    container_choices.append({"name": f'{container}', "value": f'{container}'})
+            if verify:
+                for container in options_:
+                    if string_option_input_lower in container.lower() and \
+                            string_option_input_lower not in exclusion_list:
+                        container_choices.append({"name": f'{container}', "value": f'{container}'})
 
-            logging.info(f'Container found:{container_choices}')
+                logging.info(f'Container found:{container_choices}')
 
         await ctx.send(choices=container_choices)
 
@@ -530,6 +547,17 @@ class DockerCommands(Extension):
         string_option_input_lower = string_option_input.lower()
         # Get running containers
         options_ = c.get_all_containers()
+        options_r = c.get_running_containers()
+
+        def start_options():
+            choices = []
+            count = 0
+            for option in options_r:
+                count += 1
+                if count <= 25:
+                    choices.append({"name": option, "value": option})
+            return choices
+
         container_choices = []
         # When no user input, show current db entries for apps
         if ctx.input_text == "":
@@ -538,6 +566,9 @@ class DockerCommands(Extension):
                 app = user.get('application')
                 if app not in container_choices:
                     container_choices.append(app)
+            if len(container_choices) == 0:
+                container_choices = start_options()
+
 
         else:
             for container in options_:
