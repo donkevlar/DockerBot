@@ -226,7 +226,9 @@ class DockerCommands(Extension):
     @check(ownership_check)
     @option_container_name()
     @slash_option(name='user', description="Discord User", opt_type=OptionType.USER, required=True)
-    async def add_user_manager(self, ctx: SlashContext, user, container_name: str):
+    @slash_option(name='notify', description="Notify the user that they have been added as an application manager",
+                  opt_type=OptionType.BOOLEAN, required=False)
+    async def add_user_manager(self, ctx: SlashContext, user, container_name: str, notify=False):
 
         await ctx.defer(ephemeral=True)
         try:
@@ -234,13 +236,15 @@ class DockerCommands(Extension):
 
             if result:
                 discord_user = await self.bot.fetch_user(user)
+                if notify:
+                    await discord_user.send(f"Hello, {discord_user.display_name}, you have been granted as an application manager for **{container_name}** by your gracious overlord **{ctx.bot.owner.display_name}**. Congratulations!")
                 username = discord_user.username
                 logger.info(f"Successfully added user {username} as application manager for {container_name}")
                 await ctx.send(
                     f"Successfully added user **{username}** as an application manager for application **{container_name}**")
             else:
                 discord_user = await self.bot.fetch_user(user)
-                username = discord_user.username
+                username = discord_user.display_name
                 await ctx.send(f"User **{username}** is already an application manager for **{container_name}**")
 
         except Exception as e:
@@ -255,7 +259,7 @@ class DockerCommands(Extension):
     async def remove_app_manager(self, ctx: SlashContext, user, container_name: str):
         try:
             await ctx.defer(ephemeral=True)
-            result = await db.remove_user_application(int(user), container_name)
+            result = db.remove_user_application(int(user), container_name)
             if result:
                 discord_user = await self.bot.fetch_user(user)
                 username = discord_user.username
@@ -268,7 +272,8 @@ class DockerCommands(Extension):
         except Exception as e:
             discord_user = await self.bot.fetch_user(user)
             username = discord_user.username
-            logger.warning(f'Could not remove user {username} from application {container_name}')
+            logger.error(f'Could not remove user {username} from application {container_name}')
+            logger.error(e)
             await ctx.send("Could not complete the operation, please visit the logs for further details.")
 
     @slash_command(name="list-applications", description="List your current applications")

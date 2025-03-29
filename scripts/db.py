@@ -34,3 +34,4 @@ def remove_user_application(user_id: int, application: str):
     """Remove a specific application for a user."""
     User = Query()
     table.remove((User.user_id == user_id) & (User.application == application))
+    return True
