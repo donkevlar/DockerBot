@@ -237,7 +237,7 @@ class DockerCommands(Extension):
             if result:
                 discord_user = await self.bot.fetch_user(user)
                 if notify:
-                    await discord_user.send(f"Hello, {discord_user.display_name}, you have been granted as an application manager for **{container_name}** by your gracious overlord **{ctx.bot.owner.display_name}**. Congratulations!")
+                    await discord_user.send(f"Hello, {discord_user.display_name}, you have been promoted to an application manager for **{container_name}** by your gracious overlord **{ctx.bot.owner.display_name}**. Congratulations!")
                 username = discord_user.username
                 logger.info(f"Successfully added user {username} as application manager for {container_name}")
                 await ctx.send(
@@ -425,7 +425,6 @@ class DockerCommands(Extension):
             await ctx.send(choices=container_choices)
 
     @add_user_manager.autocomplete("container_name")
-    @remove_app_manager.autocomplete("container_name")
     async def autocomplete_all_containers(self, ctx: AutocompleteContext):
         # Get user input from discord
         string_option_input = ctx.input_text
@@ -435,6 +434,32 @@ class DockerCommands(Extension):
         container_choices = []
         if ctx.input_text == "":
             pass
+
+        else:
+            for container in options_:
+                if string_option_input_lower in container.lower() and \
+                        string_option_input_lower not in exclusion_list:
+                    container_choices.append({"name": f'{container}', "value": f'{container}'})
+
+            logging.info(f'Container found:{container_choices}')
+
+        await ctx.send(choices=container_choices)
+
+    @remove_app_manager.autocomplete("container_name")
+    async def autocomplete_remove_manager(self, ctx: AutocompleteContext):
+        # Get user input from discord
+        string_option_input = ctx.input_text
+        string_option_input_lower = string_option_input.lower()
+        # Get running containers
+        options_ = c.get_all_containers()
+        container_choices = []
+        # When no user input, show current db entries for apps
+        if ctx.input_text == "":
+            result = db.get_all_users()
+            for user in result:
+                app = user.get('application')
+                if app not in container_choices:
+                    container_choices.append(app)
 
         else:
             for container in options_:
