@@ -31,14 +31,6 @@ def docker_client_connect(output: str = None):
     return client
 
 
-def get_containers():
-    client = docker_client_connect()
-    # List all containers
-    containers = client.containers.list(all=True)
-
-    return containers
-
-
 def get_running_containers():
     client = docker_client_connect()
     containers = client.containers.list(all=True)
@@ -61,6 +53,20 @@ def get_stopped_containers():
     stopped_containers = [container.name for container in containers if container.status == 'exited']
     sorted_stopped_containers = sorted(stopped_containers)
     return sorted_stopped_containers
+
+
+def get_all_containers():
+    client = docker_client_connect()
+    containers = client.containers.list(all=True)
+
+    return [container.name for container in containers]
+
+
+def get_containers():
+    client = docker_client_connect()
+    containers = client.containers.list(all=True)
+
+    return containers
 
 
 def restart_container(container_id_or_name):
