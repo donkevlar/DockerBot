@@ -1,8 +1,7 @@
 # DockerBot
-Simple DockerBot
+Docker bot with some application management and team management elements built-in.
 
-Can Start, Stop, Restart and List all currently running containers. 
+This docker bot is most useful when used in your friend groups or if you are hosting a series of game servers through containers. You can assign users multiple applications which they can manage through a series of commands. 
 
-Can use remote connections. 
+Only the discord bot owner (The person who registered the bot) can add or remove application managers.
 
-Note: This was created more as an experiment, please use at your own risk. If you want to look at my more fleshed out project, please check out [Bookshelf-Traveller](https://github.com/donkevlar/Bookshelf-Traveller)
