@@ -287,7 +287,6 @@ class DockerCommands(Extension):
 
     @slash_command(name="list-applications", description="List your current applications")
     @slash_option(name='user', description="Discord User", opt_type=OptionType.USER)
-    @check(ownership_check)
     # TODO make embed and each embed should be linked to a user listing their apps
     async def list_applications(self, ctx: SlashContext, user=0):
         await ctx.defer(ephemeral=True)
@@ -313,20 +312,39 @@ class DockerCommands(Extension):
                     await ctx.send("No applications registered to this user.")
 
             else:
-                result = db.get_all_users()
-                containers = []
-                if result:
-                    for apps in result:
-                        app_name = apps.get('application')
-                        user = apps.get('user_id')
+                verify = await ownership_check(ctx)
+                if verify:
+                    result = db.get_all_users()
+                    if result:
+                        for apps in result:
+                            app_name = apps.get('application')
+                            user = apps.get('user_id')
 
-                        discord_ = await self.bot.fetch_user(user)
-                        discord_user = discord_.username
+                            discord_ = await self.bot.fetch_user(user)
+                            discord_user = discord_.username
 
-                        await ctx.send(f"{discord_user} | {app_name}")
+                            await ctx.send(f"{discord_user} | {app_name}")
+
+                    else:
+                        await ctx.send("No users registered as application managers.")
 
                 else:
-                    await ctx.send("No users registered as application managers.")
+                    result = db.get_user_applications(ctx.user.id)
+                    containers = []
+                    discord_user = ctx.user.display_name
+                    if result:
+
+                        num_ = len(result)
+                        await ctx.send(f'User **{discord_user}** is registered to **{num_}** applications')
+                        for apps in result:
+                            app_name = apps.get('application')
+                            user = apps.get('user_id')
+
+                            containers.append(app_name)
+
+                            await ctx.send(f"{app_name}")
+                    else:
+                        await ctx.send("No applications registered to this user.")
         except Exception as e:
             logger.error(traceback.format_exc())
             await ctx.send("Failed to complete the operation, please visit the logs for more details.")
@@ -373,12 +391,14 @@ class DockerCommands(Extension):
                     container_choices = start_options()
 
         else:
-            for container in options_running:
-                if string_option_input_lower in container.lower() and \
-                        string_option_input_lower not in exclusion_list:
-                    container_choices.append({"name": f'{container}', "value": f'{container}'})
+            verify = await ownership_check(ctx)
+            if verify:
+                for container in options_running:
+                    if string_option_input_lower in container.lower() and \
+                            string_option_input_lower not in exclusion_list:
+                        container_choices.append({"name": f'{container}', "value": f'{container}'})
 
-            logging.info(f'Container found:{container_choices}')
+                logging.info(f'Container found:{container_choices}')
 
         await ctx.send(choices=container_choices)
 
@@ -419,12 +439,14 @@ class DockerCommands(Extension):
                     container_choices = stop_options()
 
         else:
-            for container in options_running:
-                if (string_option_input == container or string_option_input in container.lower()) and \
-                        string_option_input not in exclusion_list:
-                    container_choices += [{"name": f'{container}', "value": f'{container}'}]
-                    print(f'Searched for: {string_option_input} | Found: {container} ')
-                    logging.info(f'Searched for: {string_option_input} | Found: {container} ')
+            verify = await ownership_check(ctx)
+            if verify:
+                for container in options_running:
+                    if (string_option_input == container or string_option_input in container.lower()) and \
+                            string_option_input not in exclusion_list:
+                        container_choices += [{"name": f'{container}', "value": f'{container}'}]
+                        print(f'Searched for: {string_option_input} | Found: {container} ')
+                        logging.info(f'Searched for: {string_option_input} | Found: {container} ')
 
         await ctx.send(choices=container_choices)
 
