@@ -291,23 +291,24 @@ class DockerCommands(Extension):
     async def list_applications(self, ctx: SlashContext, user=0):
         await ctx.defer(ephemeral=True)
         try:
-
             if user:
                 result = db.get_user_applications(user)
                 containers = []
                 discord_ = await self.bot.fetch_user(user)
                 discord_user = discord_.username
                 if result:
-
                     num_ = len(result)
-                    await ctx.send(f'User **{discord_user}** is registered to **{num_}** applications')
+                    embed_msg = Embed(title=F"{discord_user} Registered Applications",
+                                      color=ctx.user.accent_color)
+                    embed_msg.add_field(name='Info', value=f"User **{discord_user}** is registered to **{num_}** applications")
+
                     for apps in result:
                         app_name = apps.get('application')
-                        user = apps.get('user_id')
 
                         containers.append(app_name)
 
-                        await ctx.send(f"{app_name}")
+                    embed_msg.add_field(name='Applications', value=str(containers))
+                    await ctx.send(embed=embed_msg, ephemeral=True)
                 else:
                     await ctx.send("No applications registered to this user.")
 
@@ -323,10 +324,10 @@ class DockerCommands(Extension):
                             discord_ = await self.bot.fetch_user(user)
                             discord_user = discord_.username
 
-                            await ctx.send(f"{discord_user} | {app_name}")
+                            await ctx.send(f"{discord_user} | {app_name}", ephemeral=True)
 
                     else:
-                        await ctx.send("No users registered as application managers.")
+                        await ctx.send("No users registered as application managers.", ephemeral=True)
 
                 else:
                     result = db.get_user_applications(ctx.user.id)
@@ -344,7 +345,7 @@ class DockerCommands(Extension):
 
                             await ctx.send(f"{app_name}")
                     else:
-                        await ctx.send("No applications registered to this user.")
+                        await ctx.send("No applications registered to this user.", ephemeral=True)
         except Exception as e:
             logger.error(traceback.format_exc())
             await ctx.send("Failed to complete the operation, please visit the logs for more details.")
@@ -361,6 +362,9 @@ class DockerCommands(Extension):
         options_running.sort()
         logger.debug(f"Sorted: {options_running}")
         container_choices = []
+        # Check ownership
+        verify = await ownership_check(ctx)
+        logger.info(f"Command Verified: {verify}")
 
         def start_options():
             choices = []
@@ -379,19 +383,14 @@ class DockerCommands(Extension):
                     if app_name not in container_choices and app_name in options_running:
                         container_choices.append(app_name)
                     else:
-                        verify = await ownership_check(ctx)
-                        logger.debug(f"Verification: {verify}")
                         if verify:
                             container_choices = start_options()
 
             else:
-                verify = await ownership_check(ctx)
-                logger.debug(f"Verification: {verify}")
                 if verify:
                     container_choices = start_options()
 
         else:
-            verify = await ownership_check(ctx)
             if verify:
                 for container in options_running:
                     if string_option_input_lower in container.lower() and \
@@ -411,6 +410,8 @@ class DockerCommands(Extension):
         options_running = c.get_running_containers()
         options_running.sort()
         container_choices = []
+        # Check privileges
+        verify = await ownership_check(ctx)
 
         def stop_options():
             choices = []
@@ -430,16 +431,14 @@ class DockerCommands(Extension):
                     if app_name not in container_choices and app_name in options_running:
                         container_choices.append(app_name)
                     else:
-                        verify = await ownership_check(ctx)
+
                         if verify:
                             container_choices = stop_options()
             else:
-                verify = await ownership_check(ctx)
                 if verify:
                     container_choices = stop_options()
 
         else:
-            verify = await ownership_check(ctx)
             if verify:
                 for container in options_running:
                     if (string_option_input == container or string_option_input in container.lower()) and \
