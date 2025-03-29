@@ -290,24 +290,34 @@ class DockerCommands(Extension):
     # TODO make embed and each embed should be linked to a user listing their apps
     async def list_applications(self, ctx: SlashContext, user=0):
         await ctx.defer(ephemeral=True)
+
+        async def send_user_results(user_id):
+            r = db.get_user_applications(user_id)
+            cont_ = []
+            d_ = await self.bot.fetch_user(user_id)
+            d_user = d_.username
+            if r:
+                n_ = len(r)
+                msg_ = Embed(title=F"{d_user} Registered Applications",
+                                  color=ctx.user.accent_color)
+                msg_.add_field(name='Info',
+                                    value=f"User **{d_user}** is registered to **{n_}** applications")
+
+                for app in r:
+                    name_ = app.get('application')
+
+                    cont_.append(name_)
+
+                msg_.add_field(name='Applications', value="\n".join(cont_))
+                return msg_
+            else:
+                return False
+
         try:
+
             if user:
-                result = db.get_user_applications(user)
-                containers = []
-                discord_ = await self.bot.fetch_user(user)
-                discord_user = discord_.username
-                if result:
-                    num_ = len(result)
-                    embed_msg = Embed(title=F"{discord_user} Registered Applications",
-                                      color=ctx.user.accent_color)
-                    embed_msg.add_field(name='Info', value=f"User **{discord_user}** is registered to **{num_}** applications")
-
-                    for apps in result:
-                        app_name = apps.get('application')
-
-                        containers.append(app_name)
-
-                    embed_msg.add_field(name='Applications', value=str(containers))
+                embed_msg = await send_user_results(user)
+                if embed_msg:
                     await ctx.send(embed=embed_msg, ephemeral=True)
                 else:
                     await ctx.send("No applications registered to this user.")
@@ -330,22 +340,12 @@ class DockerCommands(Extension):
                         await ctx.send("No users registered as application managers.", ephemeral=True)
 
                 else:
-                    result = db.get_user_applications(ctx.user.id)
-                    containers = []
-                    discord_user = ctx.user.display_name
-                    if result:
-
-                        num_ = len(result)
-                        await ctx.send(f'User **{discord_user}** is registered to **{num_}** applications')
-                        for apps in result:
-                            app_name = apps.get('application')
-                            user = apps.get('user_id')
-
-                            containers.append(app_name)
-
-                            await ctx.send(f"{app_name}")
+                    embed_msg = await send_user_results(ctx.user.id)
+                    if embed_msg:
+                        await ctx.send(embed=embed_msg, ephemeral=True)
                     else:
-                        await ctx.send("No applications registered to this user.", ephemeral=True)
+                        await ctx.send("No applications registered to this user.")
+
         except Exception as e:
             logger.error(traceback.format_exc())
             await ctx.send("Failed to complete the operation, please visit the logs for more details.")
