@@ -297,7 +297,7 @@ class DockerCommands(Extension):
                 containers = []
                 discord_ = await self.bot.fetch_user(user)
                 discord_user = discord_.username
-                if user in result:
+                if result:
 
                     num_ = len(result)
                     await ctx.send(f'User **{discord_user}** is registered to **{num_}** applications')
