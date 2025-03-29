@@ -247,9 +247,9 @@ class DockerCommands(Extension):
                     await discord_user.send(
                         f"Hello, {discord_user.display_name}, you have been promoted to an application manager for **{container_name}** by your gracious overlord **{ctx.bot.owner.display_name}**. Congratulations!")
                 username = discord_user.username
-                logger.info(f"Successfully added user {username} as application manager for {container_name}")
+                logger.info(f"Successfully added user {discord_user.display_name} as application manager for {container_name}")
                 await ctx.send(
-                    f"Successfully added user **{username}** as an application manager for application **{container_name}**")
+                    f"Successfully added user **{discord_user.display_name}** as an application manager for application **{container_name}**")
             else:
                 discord_user = await self.bot.fetch_user(user)
                 username = discord_user.display_name
