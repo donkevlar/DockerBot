@@ -1,6 +1,6 @@
 from tinydb import TinyDB, Query
 
-db = TinyDB("data.json")
+db = TinyDB("db/data.json")
 table = db.table("users")
 
 
