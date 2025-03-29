@@ -1,5 +1,5 @@
 # official Python runtime as a base image
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
 
 # Set the working directory to /AudiblePy
