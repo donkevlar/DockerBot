@@ -237,7 +237,8 @@ class DockerCommands(Extension):
             if result:
                 discord_user = await self.bot.fetch_user(user)
                 if notify:
-                    await discord_user.send(f"Hello, {discord_user.display_name}, you have been promoted to an application manager for **{container_name}** by your gracious overlord **{ctx.bot.owner.display_name}**. Congratulations!")
+                    await discord_user.send(
+                        f"Hello, {discord_user.display_name}, you have been promoted to an application manager for **{container_name}** by your gracious overlord **{ctx.bot.owner.display_name}**. Congratulations!")
                 username = discord_user.username
                 logger.info(f"Successfully added user {username} as application manager for {container_name}")
                 await ctx.send(
@@ -304,7 +305,6 @@ class DockerCommands(Extension):
                 containers = []
                 if result:
                     for apps in result:
-
                         app_name = apps.get('application')
                         user = apps.get('user_id')
 
@@ -333,10 +333,18 @@ class DockerCommands(Extension):
         container_choices = []
         if ctx.input_text == "":
             count = 0
-            for option in options_running:
-                count += 1
-                if count <= 25:
-                    container_choices.append({"name": option, "value": option})
+            apps = db.get_user_applications(ctx.user.id)
+            if apps:
+                for app in apps:
+                    app_name = app.get('application')
+                    if app_name not in container_choices and app_name in options_running:
+                        container_choices.append(app_name)
+
+            else:
+                for option in options_running:
+                    count += 1
+                    if count <= 25:
+                        container_choices.append({"name": option, "value": option})
 
         else:
             for container in options_running:
@@ -360,10 +368,17 @@ class DockerCommands(Extension):
 
         if ctx.input_text == "":
             count = 0
-            for option in options_running:
-                count += 1
-                if count <= 25:
-                    container_choices.append({"name": option, "value": option})
+            apps = db.get_user_applications(ctx.user.id)
+            if apps:
+                for app in apps:
+                    app_name = app.get('application')
+                    if app_name not in container_choices and app_name in options_running:
+                        container_choices.append(app_name)
+            else:
+                for option in options_running:
+                    count += 1
+                    if count <= 25:
+                        container_choices.append({"name": option, "value": option})
 
         else:
             for container in options_running:
