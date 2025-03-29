@@ -329,8 +329,18 @@ class DockerCommands(Extension):
         # Get running containers
         options_running = c.get_stopped_containers()
         options_running.sort()
-        print("Sorted: ", options_running)
+        logger.debug(f"Sorted: {options_running}")
         container_choices = []
+
+        def start_options():
+            choices = []
+            count = 0
+            for option in options_running:
+                count += 1
+                if count <= 25:
+                    choices.append({"name": option, "value": option})
+            return choices
+
         if ctx.input_text == "":
             count = 0
             apps = db.get_user_applications(ctx.user.id)
@@ -339,12 +349,11 @@ class DockerCommands(Extension):
                     app_name = app.get('application')
                     if app_name not in container_choices and app_name in options_running:
                         container_choices.append(app_name)
+                    else:
+                        container_choices = start_options()
 
             else:
-                for option in options_running:
-                    count += 1
-                    if count <= 25:
-                        container_choices.append({"name": option, "value": option})
+                container_choices = start_options()
 
         else:
             for container in options_running:
@@ -366,6 +375,15 @@ class DockerCommands(Extension):
         options_running.sort()
         container_choices = []
 
+        def stop_options():
+            choices = []
+            count = 0
+            for option in options_running:
+                count += 1
+                if count <= 25:
+                    choices.append({"name": option, "value": option})
+            return choices
+
         if ctx.input_text == "":
             count = 0
             apps = db.get_user_applications(ctx.user.id)
@@ -374,11 +392,10 @@ class DockerCommands(Extension):
                     app_name = app.get('application')
                     if app_name not in container_choices and app_name in options_running:
                         container_choices.append(app_name)
+                    else:
+                        container_choices = stop_options()
             else:
-                for option in options_running:
-                    count += 1
-                    if count <= 25:
-                        container_choices.append({"name": option, "value": option})
+                container_choices = stop_options()
 
         else:
             for container in options_running:
