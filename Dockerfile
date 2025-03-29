@@ -3,10 +3,10 @@ FROM python:3.12-slim
 
 
 # Set the working directory to /AudiblePy
-WORKDIR /DockerBot
+WORKDIR /app
 
 # Copy the current directory contents into the container at /app
-COPY scripts/ /DockerBot
+COPY scripts/ /app
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
