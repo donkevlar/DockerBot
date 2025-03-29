@@ -329,9 +329,13 @@ class DockerCommands(Extension):
                         "Permission Denied! You do not have permission to run this command with this argument.")
 
             else:
+                # List all current users - Admin Only
                 if verify:
                     result = db.get_all_users()
+                    containers = []
+
                     if result:
+                        embed_msg = Embed(title="Registered Applications | All Users")
                         for apps in result:
                             app_name = apps.get('application')
                             user = apps.get('user_id')
@@ -339,7 +343,10 @@ class DockerCommands(Extension):
                             discord_ = await self.bot.fetch_user(user)
                             discord_user = discord_.display_name
 
-                            await ctx.send(f"{discord_user} | {app_name}", ephemeral=True)
+                            containers.append(f"{discord_user} | {app_name}")
+
+                        embed_msg.add_field(name='Users', value="\n".join(containers))
+                        await ctx.send(embed=embed_msg, ephemeral=True)
 
                     else:
                         await ctx.send("No users registered as application managers.", ephemeral=True)
