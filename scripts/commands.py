@@ -1,5 +1,7 @@
 import logging
 import os
+import traceback
+
 from dotenv import load_dotenv
 from interactions import *
 from interactions.ext.paginators import Paginator
@@ -83,7 +85,6 @@ class DockerCommands(Extension):
         options_running = c.get_running_containers()
 
         if container_name in options_running:
-
             c.restart_container(container_name)
 
             print(f'Executed Restart Successfully: {container_name}')
@@ -234,18 +235,85 @@ class DockerCommands(Extension):
             if result:
                 discord_user = await self.bot.fetch_user(user)
                 username = discord_user.username
+                logger.info(f"Successfully added user {username} as application manager for {container_name}")
                 await ctx.send(
-                    f"Successfully added user {username} as an application manager for application {container_name}")
+                    f"Successfully added user **{username}** as an application manager for application **{container_name}**")
+            else:
+                discord_user = await self.bot.fetch_user(user)
+                username = discord_user.username
+                await ctx.send(f"User **{username}** is already an application manager for **{container_name}**")
 
         except Exception as e:
             logger.warning(f"Could not add user {user} as an application manager due to {e}")
             await ctx.send(
                 "Could not complete the operation, please try again later. View the logs for more information.")
 
-    @check(ownership_check)
     @slash_command(name='remove-manager', description="remove a manager from an application")
+    @check(ownership_check)
+    @option_container_name()
+    @slash_option(name='user', description="Discord User", opt_type=OptionType.USER, required=True)
     async def remove_app_manager(self, ctx: SlashContext, user, container_name: str):
-        pass
+        try:
+            await ctx.defer(ephemeral=True)
+            result = await db.remove_user_application(int(user), container_name)
+            if result:
+                discord_user = await self.bot.fetch_user(user)
+                username = discord_user.username
+                await ctx.send(f"Successfully removed user **{username}** from application **{container_name}**")
+            else:
+                discord_user = await self.bot.fetch_user(user)
+                username = discord_user.username
+                await ctx.send(f"User **{username}** did not have assigned application **{container_name}**")
+
+        except Exception as e:
+            discord_user = await self.bot.fetch_user(user)
+            username = discord_user.username
+            logger.warning(f'Could not remove user {username} from application {container_name}')
+            await ctx.send("Could not complete the operation, please visit the logs for further details.")
+
+    @slash_command(name="list-applications", description="List your current applications")
+    @slash_option(name='user', description="Discord User", opt_type=OptionType.USER)
+    @check(ownership_check)
+    # TODO make embed and each embed should be linked to a user listing their apps
+    async def list_applications(self, ctx: SlashContext, user=0):
+        await ctx.defer(ephemeral=True)
+        try:
+            if user:
+                result = db.get_user_applications(user)
+                containers = []
+                if result:
+                    discord_ = await self.bot.fetch_user(user)
+                    discord_user = discord_.username
+                    num_ = len(result)
+                    await ctx.send(f'User **{discord_user}** is registered to **{num_}** applications')
+                    for apps in result:
+                        app_name = apps.get('application')
+                        user = apps.get('user_id')
+
+                        containers.append(app_name)
+
+                        await ctx.send(f"{app_name}")
+
+            else:
+                result = db.get_all_users()
+                containers = []
+                if result:
+                    for apps in result:
+
+                        app_name = apps.get('application')
+                        user = apps.get('user_id')
+
+                        discord_ = await self.bot.fetch_user(user)
+                        discord_user = discord_.username
+
+                        await ctx.send(f"{discord_user} | {app_name}")
+
+                else:
+                    await ctx.send("No users registered as application managers.")
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            await ctx.send("Failed to complete the operation, please visit the logs for more details.")
+
     # Auto Complete ---------------------------------------------
     #
     @simple_start_container.autocomplete("container_name")
@@ -352,6 +420,7 @@ class DockerCommands(Extension):
             await ctx.send(choices=container_choices)
 
     @add_user_manager.autocomplete("container_name")
+    @remove_app_manager.autocomplete("container_name")
     async def autocomplete_all_containers(self, ctx: AutocompleteContext):
         # Get user input from discord
         string_option_input = ctx.input_text
@@ -360,11 +429,7 @@ class DockerCommands(Extension):
         options_ = c.get_all_containers()
         container_choices = []
         if ctx.input_text == "":
-            count = 0
-            for option in options_:
-                count += 1
-                if count <= 25:
-                    container_choices.append({"name": option, "value": option})
+            pass
 
         else:
             for container in options_:
