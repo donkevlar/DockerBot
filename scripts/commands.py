@@ -247,7 +247,8 @@ class DockerCommands(Extension):
                     await discord_user.send(
                         f"Hello, {discord_user.display_name}, you have been promoted to an application manager for **{container_name}** by your gracious overlord **{ctx.bot.owner.display_name}**. Congratulations!")
                 username = discord_user.username
-                logger.info(f"Successfully added user {discord_user.display_name} as application manager for {container_name}")
+                logger.info(
+                    f"Successfully added user {discord_user.display_name} as application manager for {container_name}")
                 await ctx.send(
                     f"Successfully added user **{discord_user.display_name}** as an application manager for application **{container_name}**")
             else:
@@ -311,7 +312,6 @@ class DockerCommands(Extension):
                 else:
                     await ctx.send("No applications registered to this user.")
 
-
             else:
                 result = db.get_all_users()
                 containers = []
@@ -354,7 +354,6 @@ class DockerCommands(Extension):
             return choices
 
         if ctx.input_text == "":
-            count = 0
             apps = db.get_user_applications(ctx.user.id)
             if apps:
                 for app in apps:
@@ -362,10 +361,16 @@ class DockerCommands(Extension):
                     if app_name not in container_choices and app_name in options_running:
                         container_choices.append(app_name)
                     else:
-                        container_choices = start_options()
+                        verify = await ownership_check(ctx)
+                        logger.debug(f"Verification: {verify}")
+                        if verify:
+                            container_choices = start_options()
 
             else:
-                container_choices = start_options()
+                verify = await ownership_check(ctx)
+                logger.debug(f"Verification: {verify}")
+                if verify:
+                    container_choices = start_options()
 
         else:
             for container in options_running:
@@ -405,9 +410,13 @@ class DockerCommands(Extension):
                     if app_name not in container_choices and app_name in options_running:
                         container_choices.append(app_name)
                     else:
-                        container_choices = stop_options()
+                        verify = await ownership_check(ctx)
+                        if verify:
+                            container_choices = stop_options()
             else:
-                container_choices = stop_options()
+                verify = await ownership_check(ctx)
+                if verify:
+                    container_choices = stop_options()
 
         else:
             for container in options_running:
