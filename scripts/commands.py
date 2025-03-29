@@ -290,6 +290,7 @@ class DockerCommands(Extension):
     # TODO make embed and each embed should be linked to a user listing their apps
     async def list_applications(self, ctx: SlashContext, user=0):
         await ctx.defer(ephemeral=True)
+        verify = await ownership_check(ctx)
 
         async def send_user_results(user_id):
             r = db.get_user_applications(user_id)
@@ -299,9 +300,9 @@ class DockerCommands(Extension):
             if r:
                 n_ = len(r)
                 msg_ = Embed(title=F"{d_user} Registered Applications",
-                                  color=ctx.user.accent_color)
+                             color=ctx.user.accent_color)
                 msg_.add_field(name='Info',
-                                    value=f"User **{d_user}** is registered to **{n_}** applications")
+                               value=f"User **{d_user}** is registered to **{n_}** applications")
 
                 for app in r:
                     name_ = app.get('application')
@@ -316,14 +317,17 @@ class DockerCommands(Extension):
         try:
 
             if user:
-                embed_msg = await send_user_results(user)
-                if embed_msg:
-                    await ctx.send(embed=embed_msg, ephemeral=True)
+                # Only admin should be able to look up other users
+                if verify:
+                    embed_msg = await send_user_results(user)
+                    if embed_msg:
+                        await ctx.send(embed=embed_msg, ephemeral=True)
+                    else:
+                        await ctx.send("No applications registered to this user.")
                 else:
-                    await ctx.send("No applications registered to this user.")
+                    await ctx.send("Permission Denied! You do not have permission to run this command with this argument.")
 
             else:
-                verify = await ownership_check(ctx)
                 if verify:
                     result = db.get_all_users()
                     if result:
