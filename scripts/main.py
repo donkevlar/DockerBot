@@ -21,13 +21,13 @@ bot = Client(intents=Intents.DEFAULT, basic_logging=True)
 @listen()  # this decorator tells snek that it needs to listen for the corresponding event, and run this coroutine
 async def on_ready():
     # This event is called when the bot is ready to respond to commands
-    logging.info(f"DockerBot Version {settings.versionNumber}")
-    logging.info(f"This bot is owned by {bot.owner}")
-    logging.info("Beep Boop I am ready to serve!")
+    logger.info(f"DockerBot Version {settings.versionNumber}")
+    logger.info(f"This bot is owned by {bot.owner}")
+    logger.info("Beep Boop I am ready to serve!")
 
 
 if __name__ == "__main__":
     bot.load_extension('commands')
-    logging.info("Successfully loaded commands!")
+    logger.info("Successfully loaded commands!")
     # Start the bot
     bot.start(settings.DISCORD_API_SECRET)
