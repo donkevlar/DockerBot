@@ -26,7 +26,9 @@ exclusion_list = [os.getenv('EXCLUSIONS')]
 async def ownership_check(ctx: BaseContext, application=''):
     # Default only owner can use this bot
     # Check to see if user is the owner while ownership var is true
+    logger.info(f"Ownership check initiated for application {application}!")
     if ctx.bot.owner.username == ctx.user.username:
+        logger.info("")
         return True
     else:
         # Check if any users are populated in the management db
@@ -34,11 +36,12 @@ async def ownership_check(ctx: BaseContext, application=''):
         user_num = len(users)
 
         if user_num == 0:
-            logger.debug(f"No users found, authentication failed.")
+            logger.warning(f"No users found, authentication failed.")
             return False
 
         elif user_num > 0 and application != '':
             # Check if current user is in the managed application list
+            logger.info("Users found! Authenticating against application list!")
             user_id = ctx.user.id
             apps = db.get_user_applications(user_id)
 
@@ -46,6 +49,8 @@ async def ownership_check(ctx: BaseContext, application=''):
                 logger.info(f"User {user_id} authenticated successfully for application {application}!")
                 return True
             else:
+                logger.warning(f"User {ctx.user.display_name} failed authentication! Application list to follow!")
+                logger.warning(f"APPS: {apps}")
                 return False
 
         else:
