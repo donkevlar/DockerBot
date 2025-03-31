@@ -55,6 +55,7 @@ async def ownership_check(ctx: BaseContext, application=''):
                 return False
 
         else:
+            logger.warning(f"No application provided or no users found, rejecting authentication! Users Found: {user_num}, Application: {application}")
             return False
 
 
