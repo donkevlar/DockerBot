@@ -6,6 +6,8 @@ from interactions import *
 import docker_lib as c
 import settings
 
+logger = logging.getLogger("bot")
+
 # Load env if not running Docker
 load_dotenv()
 
