@@ -26,9 +26,9 @@ exclusion_list = [os.getenv('EXCLUSIONS')]
 async def ownership_check(ctx: BaseContext, application=''):
     # Default only owner can use this bot
     # Check to see if user is the owner while ownership var is true
-    logger.info(f"Ownership check initiated for application {application}!")
+    logger.info(f"Ownership check initiated!")
     if ctx.bot.owner.username == ctx.user.username:
-        logger.info("")
+        logger.info("Owner authenticated successfully!")
         return True
     else:
         # Check if any users are populated in the management db
@@ -41,13 +41,12 @@ async def ownership_check(ctx: BaseContext, application=''):
 
         elif user_num > 0 and application != '':
             # Check if current user is in the managed application list
-            logger.info("Users found! Authenticating against application list!")
+            logger.info(f"Users found! Authenticating against application list for {application}!")
             user_id = ctx.user.id
             apps = db.get_user_applications(user_id)
-            app = apps.get("application")
 
-            if application in apps or application == app:
-                logger.info(f"User {user_id} authenticated successfully for application {application}!")
+            if any(app['application'] == application for app in apps):
+                logger.info(f"User {ctx.user.display_name} authenticated successfully for application {application}!")
                 return True
             else:
                 logger.warning(f"User {ctx.user.display_name} failed authentication! Application list to follow!")
@@ -55,7 +54,8 @@ async def ownership_check(ctx: BaseContext, application=''):
                 return False
 
         else:
-            logger.warning(f"No application provided or no users found, rejecting authentication! Users Found: {user_num}, Application: {application}")
+            logger.warning(
+                f"No application provided or no users found, rejecting authentication! Users Found: {user_num}, Application: {application}")
             return False
 
 
@@ -122,7 +122,7 @@ class DockerCommands(Extension):
         if container_name in options_running:
             await ctx.defer(ephemeral=True)
             c.stop_container(container_name)
-            await ctx.send(f"Stopping {container_name}", ephemeral=True)
+            await ctx.send(f"Stopped {container_name} successfully!", ephemeral=True)
             logging.info('Successfully executed simple-stop-container')
 
     # Define the bots command handler
