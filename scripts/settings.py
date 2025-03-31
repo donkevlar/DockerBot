@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-versionNumber = '1.0.2'
+versionNumber = '1.0.5'
 logging.info(f'Starting DockerBot! Version: {versionNumber}')
 
 DISCORD_API_SECRET = os.getenv('DISCORD_API_SECRET')
