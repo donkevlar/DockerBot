@@ -44,8 +44,9 @@ async def ownership_check(ctx: BaseContext, application=''):
             logger.info("Users found! Authenticating against application list!")
             user_id = ctx.user.id
             apps = db.get_user_applications(user_id)
+            app = apps.get("application")
 
-            if application in apps:
+            if application in apps or application == app:
                 logger.info(f"User {user_id} authenticated successfully for application {application}!")
                 return True
             else:
